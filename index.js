@@ -2,15 +2,11 @@ const amqp = require("amqplib");
 const nodemailer = require("nodemailer");
 require("dotenv").config();
 
-const QUEUE_KEY = "demo-queue::/";
+const EMAIL_QUEUE_KEY = "demo-queue::/";
 
-const sendEmail = async () => {
-  const emailMessage = {
-    from: "sudhanshu.govil@innostax.com",
-    to: "harish.bisht@innostax.com",
-    subject: "IMPORTANT!",
-    html: `"<h1>Harish Bisht Testing Lambda function</h1>"`,
-  };
+const sendEmail = async (messageData) => {
+  const { from, to, subject, html } = messageData;
+  const emailMessage = { from, to, subject, html };
 
   try {
     const transporter = nodemailer.createTransport({
@@ -23,12 +19,11 @@ const sendEmail = async () => {
     });
 
     const success = await transporter.sendMail(emailMessage);
-    console.log("success", success);
-
     return success?.response
       ? "Successfully sent email: Response: " + success?.response
       : "Unable to sent email";
   } catch (err) {
+    console.log("Unable to sent email", err);
     return `Unable to sent email ${err}`;
   }
 };
@@ -36,7 +31,7 @@ const sendEmail = async () => {
 exports.handler = async (event) => {
   try {
     const bufferObj = Buffer.from(
-      event.rmqMessagesByQueue[QUEUE_KEY][0].data,
+      event.rmqMessagesByQueue[EMAIL_QUEUE_KEY][0].data,
       "base64"
     );
 
@@ -60,12 +55,13 @@ exports.handler = async (event) => {
         break;
     }
 
-    const emailResponse = await sendEmail();
+    const emailResponse = await sendEmail(messageData);
 
     const replyBackTo =
-      event.rmqMessagesByQueue[QUEUE_KEY][0].basicProperties.replyTo;
+      event.rmqMessagesByQueue[EMAIL_QUEUE_KEY][0].basicProperties.replyTo;
     const correlationId =
-      event.rmqMessagesByQueue[QUEUE_KEY][0].basicProperties.correlationId;
+      event.rmqMessagesByQueue[EMAIL_QUEUE_KEY][0].basicProperties
+        .correlationId;
 
     const connection = await amqp.connect(process.env.RABBIT_URL);
     const channel = await connection.createChannel();
@@ -82,7 +78,7 @@ exports.handler = async (event) => {
     };
     return response;
   } catch (err) {
-    console.log("Error sending email", err);
-    throw new Error("Error sending email", err);
+    console.log("Error executing Lambda", err);
+    throw new Error("Error executing Lambda", err);
   }
 };
