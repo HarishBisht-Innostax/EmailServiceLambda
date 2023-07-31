@@ -4,7 +4,8 @@ Email Service Lambda Code
 
 Sample Event JSON when triggered via queue
 
-{
+ ```
+    {
   "eventSourceArn": "arn:aws:mq:ap-south-1:669028435072:broker:rabbitmqinno:b-aca54ccf-f004-4b40-9880-a186022724e7",
   "rmqMessagesByQueue": {
     "demo-queue::/": [
@@ -33,4 +34,7 @@ Sample Event JSON when triggered via queue
   },
   "eventSource": "aws:rmq"
 }
+ ```
+
+
 
