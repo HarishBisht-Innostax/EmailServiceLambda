@@ -2,16 +2,14 @@ const amqp = require("amqplib");
 const nodemailer = require("nodemailer");
 require("dotenv").config();
 
-const sendEmail = async () => {
-  const emailMessage_3bc4d90f_b1ba_407c_8210_43e0c0ec2b26 = {
-    from: "hb20156@gmail.com",
-    to: "hb20190@gmail.com",
-    subject: "IMPORTANT!",
-    html: `"<h1>Harish Bisht Tesing Lambda function</h1>"`,
-  };
+const QUEUE_KEY = "demo-queue::/";
 
-  const SendEmailMessage = {
-    emailMessage: emailMessage_3bc4d90f_b1ba_407c_8210_43e0c0ec2b26,
+const sendEmail = async () => {
+  const emailMessage = {
+    from: "sudhanshu.govil@innostax.com",
+    to: "harish.bisht@innostax.com",
+    subject: "IMPORTANT!",
+    html: `"<h1>Harish Bisht Testing Lambda function</h1>"`,
   };
 
   try {
@@ -24,7 +22,7 @@ const sendEmail = async () => {
       },
     });
 
-    const success = await transporter.sendMail(SendEmailMessage.emailMessage);
+    const success = await transporter.sendMail(emailMessage);
     console.log("success", success);
 
     return success?.response
@@ -38,7 +36,7 @@ const sendEmail = async () => {
 exports.handler = async (event) => {
   try {
     const bufferObj = Buffer.from(
-      event.rmqMessagesByQueue["demo-queue::/"][0].data,
+      event.rmqMessagesByQueue[QUEUE_KEY][0].data,
       "base64"
     );
 
@@ -65,10 +63,9 @@ exports.handler = async (event) => {
     const emailResponse = await sendEmail();
 
     const replyBackTo =
-      event.rmqMessagesByQueue["demo-queue::/"][0].basicProperties.replyTo;
+      event.rmqMessagesByQueue[QUEUE_KEY][0].basicProperties.replyTo;
     const correlationId =
-      event.rmqMessagesByQueue["demo-queue::/"][0].basicProperties
-        .correlationId;
+      event.rmqMessagesByQueue[QUEUE_KEY][0].basicProperties.correlationId;
 
     const connection = await amqp.connect(process.env.RABBIT_URL);
     const channel = await connection.createChannel();
